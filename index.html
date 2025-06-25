@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Class Ecommerce</title>
+	</head>
+	<body>
+		<script>
+			class Ecommerce {
+				constructor() {
+					this.products = [];
+					this.cart = [];
+				}
+
+				addProduct = (product) => {
+					if (product.id && product.name && typeof product.price === 'number') {
+						this.products.push(product);
+					} else {
+						console.error('Produto inválido:', product);
+					}
+				};
+
+				setProductPrice = (productId, price) => {
+					const product = this.products.find((element) => element.id === productId);
+					if (product) {
+						product.price = price;
+					} else {
+						console.error(`Produto com ID ${productId} não encontrado.`);
+					}
+				};
+
+				getAllProducts = () => this.products;
+
+				getAllProductsNames = () => this.products.map((element) => element.name).join(', ');
+
+				getProductById = (productId) => this.products.find((element) => element.id === productId);
+
+				getProductsByPrice = (initialPrice, finalPrice) => this.products.filter((element) => element.price >= initialPrice && element.price <= finalPrice);
+
+				addProductToCart = (product) => this.cart.push(product);
+
+				getCartTotalPrice = () => this.cart.reduce((acc, currectValue) => acc + currectValue.price, 0);
+			}
+
+			const store = new Ecommerce();
+
+			store.addProduct({ id: 1, name: 'Computador', price: 100 });
+			store.addProduct({ id: 2, name: 'Rato', price: 20 });
+			store.addProduct({ id: 3, name: 'Teclado', price: 45 });
+
+			store.setProductPrice(2, 25);
+
+			console.log('Todos os produtos:', store.getAllProducts());
+			console.log(`Nomes dos produtos: ${store.getAllProductsNames()}`);
+			console.log('Produto com ID 3:', store.getProductById(3));
+			console.log('Produtos entre 30 e 100 euros:', store.getProductsByPrice(30, 100));
+
+			store.addProductToCart(store.getProductById(1));
+			store.addProductToCart(store.getProductById(3));
+
+			console.log('Carrinho:', store.cart);
+
+			console.log(`Preço total do carrinho: ${store.getCartTotalPrice()}`);
+		</script>
+	</body>
+</html>
