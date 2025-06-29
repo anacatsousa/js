@@ -4,8 +4,21 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Class Ecommerce</title>
+		<style>
+			.grid {
+				display: grid;
+				grid-template-columns: repeat(2, 1fr);
+				grid-gap: 7px;
+			}
+
+			img {
+				width: 50%;
+			}
+		</style>
 	</head>
 	<body>
+		<div id="products-container" class="grid"></div>
+		<footer></footer>
 		<script>
 			class Ecommerce {
 				constructor() {
@@ -14,7 +27,7 @@
 				}
 
 				addProduct = (product) => {
-					if (product.id && product.name && typeof product.price === 'number') {
+					if (product.id && product.title && typeof product.price === 'number') {
 						this.products.push(product);
 					} else {
 						console.error('Produto inválido:', product);
@@ -32,36 +45,125 @@
 
 				getAllProducts = () => this.products;
 
-				getAllProductsNames = () => this.products.map((element) => element.name).join(', ');
+				getAllProductsNames = () => this.products.map((element) => element.title).join(', ');
 
 				getProductById = (productId) => this.products.find((element) => element.id === productId);
 
 				getProductsByPrice = (initialPrice, finalPrice) => this.products.filter((element) => element.price >= initialPrice && element.price <= finalPrice);
 
-				addProductToCart = (product) => this.cart.push(product);
+				addProductToCart = (product) => {
+					const cartItem = this.cart.find((products) => products.id === product.id);
+					if (cartItem) {
+						cartItem.quantity += 1;
+					} else {
+						this.cart.push({ ...product, quantity: 1 });
+					}
+				};
 
-				getCartTotalPrice = () => this.cart.reduce((acc, currectValue) => acc + currectValue.price, 0);
+				getCartTotalPrice = () => this.cart.reduce((acc, currentValue) => acc + currentValue.price * currentValue.quantity, 0);
 			}
 
 			const store = new Ecommerce();
 
-			store.addProduct({ id: 1, name: 'Computador', price: 100 });
-			store.addProduct({ id: 2, name: 'Rato', price: 20 });
-			store.addProduct({ id: 3, name: 'Teclado', price: 45 });
+			fetch('https://fakestoreapi.com/products')
+				.then((response) => response.json())
+				.then((products) => {
+					const productsContainer = document.getElementById('products-container');
 
-			store.setProductPrice(2, 25);
+					products.forEach((product) => {
+						store.addProduct(product);
 
-			console.log('Todos os produtos:', store.getAllProducts());
-			console.log(`Nomes dos produtos: ${store.getAllProductsNames()}`);
-			console.log('Produto com ID 3:', store.getProductById(3));
-			console.log('Produtos entre 30 e 100 euros:', store.getProductsByPrice(30, 100));
+						const productsCard = document.createElement('div');
+						productsCard.className = 'product';
 
-			store.addProductToCart(store.getProductById(1));
-			store.addProductToCart(store.getProductById(3));
+						const productTitle = document.createElement('h3');
+						productTitle.textContent = product.title;
 
-			console.log('Carrinho:', store.cart);
+						const productImg = document.createElement('img');
+						productImg.src = product.image;
+						productImg.alt = product.title;
 
-			console.log(`Preço total do carrinho: ${store.getCartTotalPrice()}`);
+						const button = document.createElement('button');
+						button.innerText = ' Add to Cart';
+						button.addEventListener('click', () => {
+							store.addProductToCart(product);
+
+							console.log(`Preço total do carrinho: ${store.getCartTotalPrice().toFixed(2)} €`);
+
+							const payload = {
+								userId: 1,
+								date: new Date().toISOString().split('T')[0],
+								products: store.cart.map((products) => ({
+									productId: products.id,
+									quantity: products.quantity,
+								})),
+							};
+
+							fetch('https://fakestoreapi.com/carts/7', {
+								method: 'PUT',
+								mode: 'cors',
+								cache: 'no-cache',
+								credentials: 'same-origin', // include, *same-origin, omit
+								headers: {
+									'Content-Type': 'application/json',
+								},
+								redirect: 'follow',
+								referrerPolicy: 'no-referrer',
+								body: JSON.stringify(payload),
+							})
+								.then((response) => response.json())
+								.then((data) => {
+									console.log('Produto enviado ao endpoint com sucesso:', data);
+									alert(`${product.title} adicionado ao carrinho (API).`);
+								})
+								.catch((error) => {
+									console.error('Erro ao enviar ao carrinho da API:', error);
+									alert('Erro ao enviar ao carrinho da API.');
+								});
+						});
+
+						productsCard.append(productTitle);
+						productsCard.append(productImg);
+						productsCard.append(button);
+
+						productsContainer.append(productsCard);
+					});
+
+					store.setProductPrice(2, 25);
+
+					console.log('Todos os produtos:', store.getAllProducts());
+					console.log(`Nomes dos produtos: ${store.getAllProductsNames()}`);
+					console.log('Produto com ID 3:', store.getProductById(3));
+					console.log('Produtos entre 30 e 100 euros:', store.getProductsByPrice(30, 100));
+
+					console.log('Carrinho:', store.cart);
+					//console.log(`Preço total do carrinho: ${store.getCartTotalPrice()}`);
+				});
+
+			// FOOTER
+
+			let footer = document.getElementsByTagName('footer')[0];
+			footer.textContent = `Copyright ${new Date().getFullYear()}`;
+
+			// TESTES NA CONSOLA COM PRODUTOS ESTÁTICOS
+
+			// // store.addProduct({ id: 1, title: 'Computador', price: 100 });
+			// // store.addProduct({ id: 2, title: 'Rato', price: 20 });
+			// // store.addProduct({ id: 3, title: 'Teclado', price: 45 });
+
+			// store.setProductPrice(2, 25);
+
+			// console.log('Todos os produtos:', store.getAllProducts());
+			// console.log(`Nomes dos produtos: ${store.getAllProductsNames()}`);
+			// console.log('Produto com ID 3:', store.getProductById(3));
+			// console.log('Produtos entre 30 e 100 euros:', store.getProductsByPrice(30, 100));
+
+			// // store.addProductToCart(store.getProductById(1));
+			// // store.addProductToCart(store.getProductById(3));
+
+			// console.log('Carrinho:', store.cart);
+
+			// console.log(`Preço total do carrinho: ${store.getCartTotalPrice()}`);
 		</script>
 	</body>
 </html>
